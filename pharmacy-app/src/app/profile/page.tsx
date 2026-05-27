@@ -1,6 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import {
+  useEffect,
+  useState,
+} from "react"
+
 import { useRouter } from "next/navigation"
 
 import {
@@ -21,11 +25,11 @@ export default function ProfilePage() {
 
   const [formData, setFormData] =
     useState({
-      ownerName: "Admin",
-      email: "admin@pharma.com",
-      phone: "9876543210",
+      ownerName: "",
+      email: "",
+      phone: "",
 
-      pharmacyName: "ABC Pharmacy",
+      pharmacyName: "",
       ayushmanId: "",
       drugLicense: "",
       licenseExpiry: "",
@@ -34,14 +38,74 @@ export default function ProfilePage() {
       timings: "",
     })
 
+  useEffect(() => {
+    fetchProfile()
+  }, [])
+
+  const fetchProfile =
+    async () => {
+      try {
+        const res = await fetch(
+          "/api/profile"
+        )
+
+        const data =
+          await res.json()
+
+        setFormData({
+          ownerName:
+            data?.name || "",
+
+          email:
+            data?.email || "",
+
+          phone:
+            data?.phone || "",
+
+          pharmacyName:
+            data?.pharmacy || "",
+
+          ayushmanId:
+            data?.ayushman_hfr_id ||
+            "",
+
+          drugLicense:
+            data?.drug_license_number ||
+            "",
+
+          licenseExpiry:
+            data?.license_expiry
+              ? new Date(
+                  data.license_expiry
+                )
+                  .toISOString()
+                  .split("T")[0]
+              : "",
+
+          gstNumber:
+            data?.gst_number ||
+            "",
+
+          location:
+            data?.location ||
+            "",
+
+          timings:
+            data?.timings ||
+            "",
+        })
+      } catch (error) {
+        console.log(error)
+      }
+    }
+
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement
-    >
+    e: React.ChangeEvent<HTMLInputElement>
   ) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]:
+        e.target.value,
     })
   }
 
@@ -104,8 +168,12 @@ export default function ProfilePage() {
               <input
                 type="text"
                 name="ownerName"
-                value={formData.ownerName}
-                onChange={handleChange}
+                value={
+                  formData.ownerName
+                }
+                onChange={
+                  handleChange
+                }
                 className="w-full border border-black/10 px-4 py-3 outline-none"
               />
             </div>
@@ -119,8 +187,12 @@ export default function ProfilePage() {
               <input
                 type="email"
                 name="email"
-                value={formData.email}
-                onChange={handleChange}
+                value={
+                  formData.email
+                }
+                onChange={
+                  handleChange
+                }
                 className="w-full border border-black/10 px-4 py-3 outline-none"
               />
             </div>
@@ -134,8 +206,12 @@ export default function ProfilePage() {
               <input
                 type="text"
                 name="phone"
-                value={formData.phone}
-                onChange={handleChange}
+                value={
+                  formData.phone
+                }
+                onChange={
+                  handleChange
+                }
                 className="w-full border border-black/10 px-4 py-3 outline-none"
               />
             </div>
@@ -162,13 +238,17 @@ export default function ProfilePage() {
               <input
                 type="text"
                 name="pharmacyName"
-                value={formData.pharmacyName}
-                onChange={handleChange}
+                value={
+                  formData.pharmacyName
+                }
+                onChange={
+                  handleChange
+                }
                 className="w-full border border-black/10 px-4 py-3 outline-none"
               />
             </div>
 
-            {/* Ayushman ID */}
+            {/* Ayushman */}
             <div>
               <label className="block mb-2 uppercase tracking-[0.2em] text-xs text-black/40">
                 Ayushman HFR ID
@@ -177,8 +257,12 @@ export default function ProfilePage() {
               <input
                 type="text"
                 name="ayushmanId"
-                value={formData.ayushmanId}
-                onChange={handleChange}
+                value={
+                  formData.ayushmanId
+                }
+                onChange={
+                  handleChange
+                }
                 className="w-full border border-black/10 px-4 py-3 outline-none"
               />
             </div>
@@ -192,13 +276,17 @@ export default function ProfilePage() {
               <input
                 type="text"
                 name="drugLicense"
-                value={formData.drugLicense}
-                onChange={handleChange}
+                value={
+                  formData.drugLicense
+                }
+                onChange={
+                  handleChange
+                }
                 className="w-full border border-black/10 px-4 py-3 outline-none"
               />
             </div>
 
-            {/* License Expiry */}
+            {/* Expiry */}
             <div>
               <label className="block mb-2 uppercase tracking-[0.2em] text-xs text-black/40">
                 License Expiry
@@ -207,8 +295,12 @@ export default function ProfilePage() {
               <input
                 type="date"
                 name="licenseExpiry"
-                value={formData.licenseExpiry}
-                onChange={handleChange}
+                value={
+                  formData.licenseExpiry
+                }
+                onChange={
+                  handleChange
+                }
                 className="w-full border border-black/10 px-4 py-3 outline-none"
               />
             </div>
@@ -222,8 +314,12 @@ export default function ProfilePage() {
               <input
                 type="text"
                 name="gstNumber"
-                value={formData.gstNumber}
-                onChange={handleChange}
+                value={
+                  formData.gstNumber
+                }
+                onChange={
+                  handleChange
+                }
                 className="w-full border border-black/10 px-4 py-3 outline-none"
               />
             </div>
@@ -240,8 +336,12 @@ export default function ProfilePage() {
                 <input
                   type="text"
                   name="location"
-                  value={formData.location}
-                  onChange={handleChange}
+                  value={
+                    formData.location
+                  }
+                  onChange={
+                    handleChange
+                  }
                   className="w-full px-3 py-3 outline-none"
                 />
               </div>
@@ -260,14 +360,18 @@ export default function ProfilePage() {
                   type="text"
                   name="timings"
                   placeholder="9 AM - 10 PM"
-                  value={formData.timings}
-                  onChange={handleChange}
+                  value={
+                    formData.timings
+                  }
+                  onChange={
+                    handleChange
+                  }
                   className="w-full px-3 py-3 outline-none"
                 />
               </div>
             </div>
 
-            {/* Save Button */}
+            {/* Save */}
             <button
               onClick={handleSave}
               className="w-full bg-black text-white py-4 uppercase tracking-[0.2em] text-sm flex items-center justify-center gap-3 hover:opacity-90 transition-opacity mt-4"
@@ -301,7 +405,7 @@ export default function ProfilePage() {
           </button>
         </div>
 
-        {/* Analysis Archive */}
+        {/* Archive */}
         <div className="border border-black/10 p-6">
           <div className="flex items-center gap-3 mb-4">
             <Archive size={20} />
@@ -337,15 +441,15 @@ export default function ProfilePage() {
           </p>
 
           <div className="space-y-3">
-            {/* Change Password */}
             <button className="border border-black px-4 py-3 uppercase tracking-[0.2em] text-xs hover:bg-black hover:text-white transition-all duration-300 w-full flex items-center justify-center gap-2">
               <Lock size={16} />
               Change Password
             </button>
 
-            {/* Logout */}
             <button
-              onClick={handleLogout}
+              onClick={
+                handleLogout
+              }
               className="bg-black text-white px-4 py-3 uppercase tracking-[0.2em] text-xs hover:opacity-90 transition-opacity w-full flex items-center justify-center gap-2"
             >
               <LogOut size={16} />

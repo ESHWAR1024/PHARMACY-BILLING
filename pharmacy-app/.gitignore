@@ -1,4 +1,4 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# See https://help.github.com/articles/ignoring-files/
 
 # dependencies
 /node_modules
@@ -20,24 +20,35 @@
 # production
 /build
 
-# misc
-.DS_Store
-*.pem
+# prisma generated client
+/src/generated/prisma
 
-# debug
+# prisma cache
+/node_modules/.prisma
+
+# environment variables
+.env
+.env.local
+.env.development.local
+.env.production.local
+
+# vercel
+.vercel
+
+# logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env
-
-# vercel
-.vercel
-
 # typescript
 *.tsbuildinfo
 next-env.d.ts
 
-/src/generated/prisma
+# misc
+.DS_Store
+Thumbs.db
+*.pem
+
+# vscode
+.vscode

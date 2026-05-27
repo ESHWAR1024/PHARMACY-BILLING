@@ -1,206 +1,285 @@
 "use client"
 
+import Link from "next/link"
+
 import {
-  Home,
   Search,
-  BarChart3,
-  User,
   Package,
   IndianRupee,
+  FileText,
+  User,
+  Receipt,
+  BarChart3,
 } from "lucide-react"
 
+import {
+  useEffect,
+  useState,
+} from "react"
+
 export default function HomePage() {
-  // Temporary dummy values
-  // Later fetch from DB/profile
+  const [user, setUser] =
+    useState<any>(null)
 
-  const ownerName = "Eshwar"
+  const [revenue, setRevenue] =
+    useState(0)
 
-  const currentSales = 25430
+  const [query, setQuery] =
+    useState("")
 
-  const today = new Date()
+  const [results, setResults] =
+    useState<any[]>([])
 
-  const currentDay =
-    today.toLocaleDateString(
-      "en-US",
-      {
-        weekday: "long",
+  useEffect(() => {
+    fetchHome()
+  }, [])
+
+  const fetchHome =
+    async () => {
+      try {
+        const res = await fetch(
+          "/api/home"
+        )
+
+        const data =
+          await res.json()
+
+        setUser(data.user)
+
+        setRevenue(
+          data.revenue
+        )
+      } catch (error) {
+        console.log(error)
       }
-    )
+    }
 
-  const currentDate =
-    today.toLocaleDateString()
+  const searchInventory =
+    async (
+      value: string
+    ) => {
+      setQuery(value)
+
+      if (!value.trim()) {
+        setResults([])
+        return
+      }
+
+      try {
+        const res =
+          await fetch(
+            `/api/search-inventory?query=${value}`
+          )
+
+        const data =
+          await res.json()
+
+        if (
+          Array.isArray(data)
+        ) {
+          setResults(data)
+        } else {
+          setResults([])
+        }
+      } catch (error) {
+        console.log(error)
+      }
+    }
 
   return (
     <main className="min-h-screen bg-white text-black">
-      {/* Navbar */}
+      {/* NAVBAR */}
       <nav className="flex items-center justify-between px-8 py-6 border-b border-black/10">
-        {/* Logo */}
-        <a
-          href="/home"
-          className="text-3xl font-black tracking-tight"
-        >
-          PHARMA
-        </a>
+        {/* LOGO */}
+        <div>
+          <h1 className="text-3xl font-black tracking-tight">
+            PHARMA
+          </h1>
+        </div>
 
-        {/* Links */}
-        <div className="flex items-center gap-10 uppercase tracking-[0.2em] text-sm">
-          <a
-            href="/home"
-            className="hover:opacity-60 transition-opacity flex items-center gap-2"
-          >
-            <Home size={16} />
-            Home
-          </a>
+        {/* SEARCH */}
+        <div className="relative w-[380px]">
+          <div className="flex items-center border border-black/10 px-4 py-3 bg-white">
+            <Search size={18} />
 
-          <a
-            href="/search"
-            className="hover:opacity-60 transition-opacity flex items-center gap-2"
-          >
-            <Search size={16} />
-            Search
-          </a>
+            <input
+              type="text"
+              placeholder="Search inventory..."
+              value={query}
+              onChange={(e) =>
+                searchInventory(
+                  e.target.value
+                )
+              }
+              className="ml-3 w-full outline-none bg-transparent"
+            />
+          </div>
 
-          <a
+          {/* SEARCH RESULTS */}
+          {results.length >
+            0 && (
+            <div className="absolute top-full left-0 w-full bg-white border border-black/10 mt-2 z-50 max-h-[400px] overflow-y-auto shadow-lg">
+              {results.map(
+                (item) => (
+                  <div
+                    key={item.id}
+                    className="p-4 border-b border-black/10 hover:bg-black hover:text-white transition-all"
+                  >
+                    <h3 className="font-bold">
+                      {
+                        item.medicine_name
+                      }
+                    </h3>
+
+                    <p className="text-sm opacity-70">
+                      Qty:
+                      {
+                        item.quantity
+                      }
+                    </p>
+
+                    <p className="text-sm opacity-70">
+                      Batch:
+                      {
+                        item.batch
+                      }
+                    </p>
+
+                    <p className="text-sm opacity-70">
+                      ₹
+                      {
+                        item.selling_price
+                      }
+                    </p>
+                  </div>
+                )
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* NAV LINKS */}
+        <div className="flex items-center gap-8">
+          <Link
             href="/inventory"
-            className="hover:opacity-60 transition-opacity flex items-center gap-2"
+            className="uppercase text-sm tracking-[0.2em] flex items-center gap-2 hover:opacity-70"
           >
             <Package size={16} />
             Inventory
-          </a>
+          </Link>
 
-          <a
+          <Link
+            href="/billing"
+            className="uppercase text-sm tracking-[0.2em] flex items-center gap-2 hover:opacity-70"
+          >
+            <Receipt size={16} />
+            Billing
+          </Link>
+
+          <Link
             href="/analysis"
-            className="hover:opacity-60 transition-opacity flex items-center gap-2"
+            className="uppercase text-sm tracking-[0.2em] flex items-center gap-2 hover:opacity-70"
           >
             <BarChart3 size={16} />
             Analysis
-          </a>
-        </div>
+          </Link>
 
-        {/* Profile */}
-        <a
-          href="/profile"
-          className="hover:opacity-60 transition-opacity"
-        >
-          <User size={22} />
-        </a>
+          <Link
+            href="/reports"
+            className="uppercase text-sm tracking-[0.2em] flex items-center gap-2 hover:opacity-70"
+          >
+            <FileText size={16} />
+            Reports
+          </Link>
+
+          <Link
+            href="/profile"
+            className="uppercase text-sm tracking-[0.2em] flex items-center gap-2 hover:opacity-70"
+          >
+            <User size={16} />
+            Profile
+          </Link>
+        </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* HERO SECTION */}
       <section className="px-8 py-16">
-        <p className="uppercase tracking-[0.4em] text-sm text-black/40 mb-4">
-          Pharmacy Dashboard
+        <p className="uppercase tracking-[0.3em] text-sm text-black/40 mb-4">
+          Dashboard
         </p>
 
-        <h1 className="text-6xl md:text-8xl font-black leading-none tracking-tight">
-          HELLO,
+        <h1 className="text-7xl font-black leading-none tracking-tight">
+          Hello,
           <br />
-          {ownerName.toUpperCase()}
+          {user?.name ||
+            "Owner"}
         </h1>
 
-        <div className="mt-10 flex flex-col md:flex-row gap-6">
-          {/* Day Card */}
-          <div className="border border-black/10 p-6 min-w-[260px]">
-            <p className="uppercase tracking-[0.2em] text-xs text-black/40 mb-3">
-              Today
-            </p>
-
-            <h2 className="text-3xl font-black">
-              {currentDay}
-            </h2>
-
-            <p className="mt-2 text-black/60">
-              {currentDate}
-            </p>
-          </div>
-
-          {/* Sales Card */}
-          <div className="border border-black/10 p-6 min-w-[260px]">
-            <p className="uppercase tracking-[0.2em] text-xs text-black/40 mb-3">
-              Current Sales
-            </p>
-
-            <div className="flex items-center gap-2">
-              <IndianRupee size={28} />
-
-              <h2 className="text-4xl font-black">
-                {currentSales}
-              </h2>
-            </div>
-
-            <p className="mt-2 text-black/60">
-              Today's revenue
-            </p>
-          </div>
-        </div>
+        <p className="mt-6 text-xl text-black/60">
+          Today is{" "}
+          {new Date().toLocaleDateString(
+            "en-US",
+            {
+              weekday:
+                "long",
+            }
+          )}
+        </p>
       </section>
 
-      {/* Dashboard Grid */}
-      <section className="grid md:grid-cols-3 gap-6 px-8 pb-20">
-        {/* Inventory */}
-        <div className="border border-black/10 p-8 hover:bg-black hover:text-white transition-all duration-300">
-          <Package size={28} />
+      {/* DASHBOARD CARDS */}
+      <section className="grid grid-cols-3 gap-6 px-8 pb-16">
+        {/* REVENUE */}
+        <div className="border border-black/10 p-8">
+          <div className="flex items-center gap-3 mb-5">
+            <IndianRupee />
 
-          <h3 className="text-2xl font-black mt-6 mb-4 uppercase tracking-[0.1em]">
-            Inventory
-          </h3>
+            <p className="uppercase tracking-[0.2em] text-sm text-black/50">
+              Revenue Till Now
+            </p>
+          </div>
 
-          <p className="leading-relaxed opacity-70">
-            Manage pharmacy stock, medicine
-            quantities, expiry dates, and
-            inventory operations.
-          </p>
-
-          <a
-            href="/inventory"
-            className="inline-block mt-8 uppercase tracking-[0.2em] text-sm"
-          >
-            Open →
-          </a>
+          <h2 className="text-5xl font-black">
+            ₹{revenue}
+          </h2>
         </div>
 
-        {/* Analysis */}
-        <div className="border border-black/10 p-8 hover:bg-black hover:text-white transition-all duration-300">
-          <BarChart3 size={28} />
+        {/* INVENTORY SEARCH */}
+        <div className="border border-black/10 p-8">
+          <div className="flex items-center gap-3 mb-5">
+            <Package />
 
-          <h3 className="text-2xl font-black mt-6 mb-4 uppercase tracking-[0.1em]">
-            Analysis
-          </h3>
+            <p className="uppercase tracking-[0.2em] text-sm text-black/50">
+              Search Results
+            </p>
+          </div>
 
-          <p className="leading-relaxed opacity-70">
-            Track pharmacy sales, trends,
-            medicine movement, and business
-            performance analytics.
-          </p>
-
-          <a
-            href="/analysis"
-            className="inline-block mt-8 uppercase tracking-[0.2em] text-sm"
-          >
-            Open →
-          </a>
+          <h2 className="text-5xl font-black">
+            {
+              results.length
+            }
+          </h2>
         </div>
 
-        {/* Profile */}
-        <div className="border border-black/10 p-8 hover:bg-black hover:text-white transition-all duration-300">
-          <User size={28} />
+        {/* CURRENT DAY */}
+        <div className="border border-black/10 p-8">
+          <div className="flex items-center gap-3 mb-5">
+            <FileText />
 
-          <h3 className="text-2xl font-black mt-6 mb-4 uppercase tracking-[0.1em]">
-            Profile
-          </h3>
+            <p className="uppercase tracking-[0.2em] text-sm text-black/50">
+              Current Day
+            </p>
+          </div>
 
-          <p className="leading-relaxed opacity-70">
-            Manage pharmacy profile, licenses,
-            business details, reports, and
-            account settings.
-          </p>
-
-          <a
-            href="/profile"
-            className="inline-block mt-8 uppercase tracking-[0.2em] text-sm"
-          >
-            Open →
-          </a>
+          <h2 className="text-4xl font-black">
+            {new Date().toLocaleDateString(
+              "en-US",
+              {
+                weekday:
+                  "long",
+              }
+            )}
+          </h2>
         </div>
       </section>
     </main>
