@@ -11,6 +11,7 @@ import {
   UserCircle,
   Trash2,
   Package,
+  MapPin,
 } from "lucide-react"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -76,17 +77,32 @@ export default function BillingPage() {
   const [showBill, setShowBill] = useState(false)
   const [billId, setBillId] = useState("")
   const [billDate, setBillDate] = useState("")
+  const [billDiscount, setBillDiscount] = useState(0)
 
   // Pharmacy info
   const [pharmacy, setPharmacy] = useState<Pharmacy | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    fetch("/api/home")
-      .then((r) => r.json())
-      .then((d) => setPharmacy(d.user))
-      .catch(console.error)
+    fetchPharmacyAndProfile()
   }, [])
+
+  const fetchPharmacyAndProfile = async () => {
+    try {
+      const homeRes = await fetch("/api/home")
+      const homeData = await homeRes.json()
+      setPharmacy(homeData.user)
+
+      const profileRes = await fetch("/api/profile")
+      const profileData = await profileRes.json()
+      // Auto-fill address from profile
+      if (profileData?.location) {
+        setPatient(prev => ({ ...prev, address: profileData.location }))
+      }
+    } catch (e) {
+      console.error(e)
+    }
+  }
 
   // ── Inventory search ──────────────────────────────────────────────────────
 
@@ -154,11 +170,15 @@ export default function BillingPage() {
     parseFloat((item.mrp * item.quantity * (1 - item.discount / 100)).toFixed(2))
 
   const subtotal = cart.reduce((s, i) => s + itemAmt(i), 0)
+  const finalSubtotal = billDiscount > 0 
+    ? parseFloat((subtotal * (1 - billDiscount / 100)).toFixed(2))
+    : subtotal
 
   // ── Checkout flow ─────────────────────────────────────────────────────────
 
   const handleCheckout = () => {
     if (cart.length === 0) return
+    setBillDiscount(0)
     setShowPatientModal(true)
   }
 
@@ -170,7 +190,7 @@ export default function BillingPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer: patient.name || "Walk-in",
-          total: subtotal,
+          total: finalSubtotal,
           items: cart.map((item) => ({
             inventoryId:   item.inventoryId,
             medicine_name: item.medicine_name,
@@ -195,8 +215,15 @@ export default function BillingPage() {
   const closeBill = () => {
     setShowBill(false)
     setCart([])
-    setPatient({ name: "", age: "", address: "", contact: "", doctor: "" })
+    setPatient(prev => ({
+      ...prev,
+      name: "",
+      age: "",
+      contact: "",
+      doctor: "",
+    }))
     setBillId("")
+    setBillDiscount(0)
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -461,17 +488,17 @@ export default function BillingPage() {
       ──────────────────────────────────────────────────────────────────── */}
       {showPatientModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-6 no-print">
-          <div className="bg-black w-full max-w-lg p-8 relative">
+          <div className="bg-white w-full max-w-lg p-8 relative border border-black/20">
             <button
               onClick={() => setShowPatientModal(false)}
-              className="absolute top-5 right-5"
+              className="absolute top-5 right-5 text-black/40 hover:text-black transition-colors"
             >
               <X size={22} />
             </button>
 
             <div className="flex items-center gap-3 mb-8">
-              <UserCircle size={28} />
-              <h2 className="text-3xl font-black tracking-tight">PATIENT DETAILS</h2>
+              <UserCircle size={28} className="text-black" />
+              <h2 className="text-3xl font-black tracking-tight text-black">PATIENT DETAILS</h2>
             </div>
 
             <div className="space-y-4">
@@ -483,7 +510,7 @@ export default function BillingPage() {
                 { label: "Doctor / Referred By", key: "doctor", type: "text", placeholder: "Dr. Name (optional)" },
               ].map((field) => (
                 <div key={field.key}>
-                  <label className="block uppercase tracking-[0.2em] text-xs text-black/40 mb-1.5">
+                  <label className="block uppercase tracking-[0.2em] text-xs text-black/60 font-semibold mb-2">
                     {field.label}
                   </label>
                   <input
@@ -493,10 +520,34 @@ export default function BillingPage() {
                     onChange={(e) =>
                       setPatient({ ...patient, [field.key]: e.target.value })
                     }
-                    className="w-full border border-black/20 px-4 py-3 outline-none focus:border-black transition-colors text-sm"
+                    className="w-full border border-black/20 px-4 py-3 outline-none focus:border-black focus:ring-1 focus:ring-black/20 transition-all text-sm text-black placeholder:text-black/40 bg-white"
                   />
                 </div>
               ))}
+
+              {/* Bill Discount Field */}
+              <div>
+                <label className="block uppercase tracking-[0.2em] text-xs text-black/60 font-semibold mb-2">
+                  Additional Bill Discount (Optional)
+                </label>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    placeholder="0"
+                    value={billDiscount}
+                    onChange={(e) => setBillDiscount(Math.min(100, Number(e.target.value)))}
+                    className="flex-1 border border-black/20 px-4 py-3 outline-none focus:border-black focus:ring-1 focus:ring-black/20 transition-all text-sm text-black placeholder:text-black/40 bg-white"
+                  />
+                  <span className="text-sm font-bold text-black/60 px-3 py-3">%</span>
+                </div>
+                {billDiscount > 0 && (
+                  <p className="text-xs text-black/50 mt-2">
+                    Saves ₹{(subtotal * billDiscount / 100).toFixed(2)} · Final: ₹{finalSubtotal.toFixed(2)}
+                  </p>
+                )}
+              </div>
             </div>
 
             <button
@@ -546,6 +597,7 @@ export default function BillingPage() {
               cart={cart}
               itemAmt={itemAmt}
               subtotal={subtotal}
+              billDiscount={billDiscount}
             />
           </div>
         </div>
@@ -562,6 +614,7 @@ export default function BillingPage() {
             cart={cart}
             itemAmt={itemAmt}
             subtotal={subtotal}
+            billDiscount={billDiscount}
           />
         </div>
       )}
@@ -579,6 +632,7 @@ function BillDocument({
   cart,
   itemAmt,
   subtotal,
+  billDiscount,
 }: {
   billId: string
   billDate: string
@@ -587,11 +641,16 @@ function BillDocument({
   cart: CartItem[]
   itemAmt: (item: CartItem) => number
   subtotal: number
+  billDiscount: number
 }) {
   const totalDiscount = cart.reduce(
     (s, i) => s + i.mrp * i.quantity * (i.discount / 100),
     0
   )
+  
+  const afterItemDiscount = subtotal
+  const billLevelDiscount = billDiscount > 0 ? (afterItemDiscount * billDiscount / 100) : 0
+  const finalAmount = afterItemDiscount - billLevelDiscount
 
   return (
     <div
@@ -872,9 +931,15 @@ function BillDocument({
                     </td>
                   </tr>
                   <tr>
-                    <td style={summaryCell()}>Discount</td>
+                    <td style={summaryCell()}>Item Discount</td>
                     <td style={summaryCell(true)}>- ₹{totalDiscount.toFixed(2)}</td>
                   </tr>
+                  {billDiscount > 0 && (
+                    <tr>
+                      <td style={summaryCell()}>Bill Discount ({billDiscount}%)</td>
+                      <td style={summaryCell(true)}>- ₹{billLevelDiscount.toFixed(2)}</td>
+                    </tr>
+                  )}
                   <tr
                     style={{
                       background: "#000",
@@ -899,7 +964,7 @@ function BillDocument({
                         borderTop: "1.5px solid #000",
                       }}
                     >
-                      ₹{subtotal.toFixed(2)}
+                      ₹{finalAmount.toFixed(2)}
                     </td>
                   </tr>
                 </tbody>

@@ -20,6 +20,9 @@ import {
   IndianRupee,
   ShoppingCart,
   Activity,
+  Download,
+  FileJson,
+  FileText,
 } from "lucide-react"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -124,6 +127,7 @@ export default function AnalysisPage() {
   const [data, setData] = useState<AnalysisData | null>(null)
   const [loading, setLoading] = useState(true)
   const [activeChart, setActiveChart] = useState<"revenue" | "profit">("revenue")
+  const [downloading, setDownloading] = useState(false)
 
   useEffect(() => {
     fetch("/api/analysis")
@@ -137,6 +141,88 @@ export default function AnalysisPage() {
 
   const fmt = (n: number) =>
     "₹" + n.toLocaleString("en-IN")
+
+  const downloadAsJSON = () => {
+    if (!data) return
+    setDownloading(true)
+    const report = {
+      generated_at: new Date().toISOString(),
+      period: "Last 30 days",
+      summary: data.summary,
+      weekly_sales: data.weekly_sales,
+      top_sellers: data.most_sold,
+      slow_movers: data.least_sold,
+      near_expiry_items: data.near_expiry,
+    }
+    
+    const element = document.createElement("a")
+    element.setAttribute("href", "data:text/plain;charset=utf-8," + encodeURIComponent(JSON.stringify(report, null, 2)))
+    element.setAttribute("download", `pharmacy-report-${new Date().toISOString().split('T')[0]}.json`)
+    element.style.display = "none"
+    document.body.appendChild(element)
+    element.click()
+    document.body.removeChild(element)
+    setDownloading(false)
+  }
+
+  const downloadAsCSV = () => {
+    if (!data) return
+    setDownloading(true)
+    
+    let csv = "PHARMACY ANALYSIS REPORT\n"
+    csv += `Generated: ${new Date().toISOString()}\n`
+    csv += `Period: Last 30 Days\n\n`
+    
+    // Summary
+    csv += "FINANCIAL SUMMARY\n"
+    csv += "Metric,Value\n"
+    csv += `Total Revenue,${data.summary.total_revenue}\n`
+    csv += `Total Cost,${data.summary.total_cost}\n`
+    csv += `Gross Profit,${data.summary.gross_profit}\n`
+    csv += `Net Profit,${data.summary.net_profit}\n`
+    csv += `Total Expenses,${data.summary.total_expenses}\n`
+    csv += `Total Transactions,${data.summary.total_transactions}\n\n`
+
+    // Weekly Sales
+    csv += "WEEKLY SALES\n"
+    csv += "Day,Revenue,Profit\n"
+    data.weekly_sales.forEach(day => {
+      csv += `${day.day},${day.revenue},${day.profit}\n`
+    })
+    csv += "\n"
+
+    // Top Sellers
+    csv += "TOP SELLERS (30 DAYS)\n"
+    csv += "Rank,Medicine,Quantity,Revenue\n"
+    data.most_sold.forEach((item, i) => {
+      csv += `${i + 1},${item.name},${item.quantity},${item.revenue}\n`
+    })
+    csv += "\n"
+
+    // Slow Movers
+    csv += "SLOW MOVERS (30 DAYS)\n"
+    csv += "Rank,Medicine,Quantity,Revenue\n"
+    data.least_sold.forEach((item, i) => {
+      csv += `${i + 1},${item.name},${item.quantity},${item.revenue}\n`
+    })
+    csv += "\n"
+
+    // Near Expiry
+    csv += "NEAR EXPIRY ITEMS\n"
+    csv += "Medicine,Batch,Expiry,Quantity,Days Left,At Risk Value\n"
+    data.near_expiry.forEach(item => {
+      csv += `${item.medicine_name},${item.batch},${item.expiry},${item.quantity},${item.days_left},${item.at_risk_value}\n`
+    })
+
+    const element = document.createElement("a")
+    element.setAttribute("href", "data:text/csv;charset=utf-8," + encodeURIComponent(csv))
+    element.setAttribute("download", `pharmacy-report-${new Date().toISOString().split('T')[0]}.csv`)
+    element.style.display = "none"
+    document.body.appendChild(element)
+    element.click()
+    document.body.removeChild(element)
+    setDownloading(false)
+  }
 
   if (loading) {
     return (
@@ -188,17 +274,35 @@ export default function AnalysisPage() {
         </div>
       </nav>
 
-      {/* Header */}
+      {/* Header with Export */}
       <section className="px-8 py-14 border-b border-black/10">
         <p className="uppercase tracking-[0.4em] text-sm text-black/40 mb-4">
           Business Intelligence
         </p>
         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4">
           <h1 className="text-6xl font-black leading-none tracking-tight">ANALYSIS</h1>
-          <p className="text-black/40 text-sm uppercase tracking-[0.2em]">
-            Last 30 days · {summary.total_transactions} transactions
-          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={downloadAsJSON}
+              disabled={downloading}
+              className="flex items-center gap-2 px-5 py-3 border border-black/20 uppercase tracking-[0.2em] text-xs font-semibold hover:bg-black hover:text-white transition-all disabled:opacity-50"
+            >
+              <FileJson size={16} />
+              JSON
+            </button>
+            <button
+              onClick={downloadAsCSV}
+              disabled={downloading}
+              className="flex items-center gap-2 px-5 py-3 bg-black text-white uppercase tracking-[0.2em] text-xs font-semibold hover:bg-black/80 transition-all disabled:opacity-50"
+            >
+              <Download size={16} />
+              {downloading ? "Exporting..." : "CSV Export"}
+            </button>
+          </div>
         </div>
+        <p className="text-black/40 text-sm uppercase tracking-[0.2em] mt-4">
+          Last 30 days · {summary.total_transactions} transactions
+        </p>
       </section>
 
       <div className="px-8 py-12 space-y-16">
