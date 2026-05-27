@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Bill {
+  id        BigInt     @id @default(autoincrement())
+  customer  String?
+  total     Float
+  createdAt DateTime?  @default(now()) @db.Timestamptz(6)
+  BillItem  BillItem[]
+}
+
+model BillItem {
+  id            BigInt @id @default(autoincrement())
+  medicine_name String
+  quantity      Int
+  price         Float
+  billId        BigInt
+  Bill          Bill   @relation(fields: [billId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model Inventory {
+  id             BigInt    @id @default(autoincrement())
+  medicine_name  String
+  quantity       Int
+  batch          String
+  expiry         DateTime  @db.Timestamptz(6)
+  selling_price  Float
+  purchase_price Float
+  createdAt      DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model Report {
+  id        BigInt    @id @default(autoincrement())
+  type      String
+  month     String
+  revenue   Float
+  profit    Float
+  createdAt DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model User {
+  id                  BigInt    @id @default(autoincrement())
+  name                String
+  email               String    @unique
+  password            String
+  pharmacy            String?
+  phone               String?
+  location            String?
+  timings             String?
+  ayushman_hfr_id     String?
+  drug_license_number String?
+  license_expiry      DateTime? @db.Timestamptz(6)
+  gst_number          String?
+  taxation_type       String?
+  total_sales         Float?    @default(0)
+  total_profit        Float?    @default(0)
+  createdAt           DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+model medicines {
+  prisma_id          BigInt  @id @default(autoincrement())
+  id                 String?
+  name               String?
+  price___           String? @map("price(₹)")
+  Is_discontinued    String?
+  manufacturer_name  String?
+  type               String?
+  pack_size_label    String?
+  short_composition1 String?
+  short_composition2 String?
+}
